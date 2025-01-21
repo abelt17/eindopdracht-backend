@@ -16,7 +16,7 @@ router.use((req, res, next) => {
 
 router.options('/', (req, res, next) => {
     res.setHeader('Allow', 'GET, POST');
-    res.send()
+    res.status(204).send();
 });
 
 router.options('/:id', (req, res, next) => {
