@@ -16,7 +16,7 @@ router.use((req, res, next) => {
 
 router.options('/', (req, res, next) => {
     res.setHeader('Allow', 'GET, POST');
-    res.send()
+    res.status(204).send();
 });
 
 router.options('/:id', (req, res, next) => {
@@ -58,7 +58,6 @@ router.post('/', async (req, res) => {
         if (method === 'SEED') {
 
             if (replace) {
-                // Clear the MusicAlbum collection
                 await MusicAlbum.deleteMany({});
             }
 
@@ -94,20 +93,30 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const {id} = req.params;
-        const album = await MusicAlbum.findById(id);
-        if (!album) {
-            return res.status(404).json({ error: 'Album not found' });
-        }
-        Object.assign(album, req.body);
-        const saveChangedAlbum = await album.save();
-        res.status(201).json(saveChangedAlbum);
+        const album = await MusicAlbum.findByIdAndUpdate(id, req.body, { new: true});
+        res.status(200).json(album);
+
+        // const {id} = req.params;
+        // const album = await MusicAlbum.findById(id);
+        // if (!album) {
+        //     return res.status(404).json({ error: 'Album not found' });
+        // }
+        // Object.assign(album, req.body);
+        // const saveChangedAlbum = await album.save();
+        // res.status(201).json(saveChangedAlbum);
     } catch (err) {
-        res.status(400).json({error: 'Failed to create album'});
+        res.status(400).json({error: 'Failed to update album'});
     }
 });
 
 router.delete('/:id', async (req, res) => {
-
+    try {
+        const {id} = req.params;
+        const album = await MusicAlbum.findByIdAndDelete(id);
+        res.status(201).json(album);
+    } catch (err) {
+        res.status(400).json({error: 'Failed to delete album'});
+    }
 });
 
 export default router;
