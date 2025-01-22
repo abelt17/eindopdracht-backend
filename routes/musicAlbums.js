@@ -58,7 +58,6 @@ router.post('/', async (req, res) => {
         if (method === 'SEED') {
 
             if (replace) {
-                // Clear the MusicAlbum collection
                 await MusicAlbum.deleteMany({});
             }
 
@@ -95,7 +94,7 @@ router.put('/:id', async (req, res) => {
     try {
         const {id} = req.params;
         const album = await MusicAlbum.findByIdAndUpdate(id, req.body, { new: true});
-        res.status(201).json(album);
+        res.status(200).json(album);
 
         // const {id} = req.params;
         // const album = await MusicAlbum.findById(id);
