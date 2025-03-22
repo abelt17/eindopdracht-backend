@@ -15,18 +15,26 @@ router.use((req, res, next) => {
 })
 
 router.options('/', (req, res, next) => {
-    res.setHeader('Allow', 'GET, POST');
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
     res.status(204).send();
 });
 
 router.options('/:id', (req, res, next) => {
-    res.setHeader('Allow', 'GET, PUT, DELETE');
+    res.setHeader('Allow', 'GET, PUT, DELETE, OPTIONS');
     res.status(204).send()
 });
 
 router.get('/', async (req, res) => {
     try {
-        const albums = await MusicAlbum.find();
+        let { page = 1, limit } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+
+        const albums = await MusicAlbum.find()
+            .skip((page - 1) * limit)
+            .limit(limit)
+        ;
+        const totalAlbums = await MusicAlbum.countDocuments();
 
         const collection = {
             "items": albums,
@@ -35,9 +43,22 @@ router.get('/', async (req, res) => {
                     "href": process.env.BASE_URL + "/musicAlbums"
                 },
                 "collection": {
-                    "href": process.env.BASE_URL + "/musicAlbums"
+                    "href": process.env.BASE_URL
+                }
+            },
+            "pagination": {
+                currentPage: page,
+                currentItems: albums.length,
+                totalPages: Math.ceil(totalAlbums / limit),
+                totalItems: totalAlbums,
+                _links: {
+                    first: { page: 1, href: `${process.env.BASE_URL}/signs?page=1&limit=${limit}` },
+                    last: { page: Math.ceil(totalAlbums / limit), href: `${process.env.BASE_URL}/signs?page=${Math.ceil(totalAlbums / limit)}&limit=${limit}` },
+                    previous: page > 1 ? { page: page - 1, href: `${process.env.BASE_URL}/signs?page=${page - 1}&limit=${limit}` } : null,
+                    next: (page * limit < totalAlbums) ? { page: page + 1, href: `${process.env.BASE_URL}/signs?page=${page + 1}&limit=${limit}` } : null
                 }
             }
+
         };
         res.json(collection)
     } catch (err) {
@@ -46,9 +67,16 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-    const {id} = req.params;
-    const album = await MusicAlbum.findById(id);
-    res.json(album);
+    try {
+        const albumId = req.params.id;
+        const album = await MusicAlbum.findById(albumId);
+        if (!album) {
+            return res.status(404).json({error: "album not found"})
+        }
+        res.status(200).json(album);
+    } catch (err) {
+        res.status(500).json({error: 'Failed to fetch album'});
+    }
 });
 
 router.post('/', async (req, res) => {
@@ -84,16 +112,16 @@ router.post('/', async (req, res) => {
         }
         const newAlbum = new MusicAlbum(req.body);
         const savedAlbum = await newAlbum.save();
-        res.status(201).json(savedAlbum);
+        return res.status(201).json(savedAlbum);
     } catch (err) {
-        res.status(400).json({error: 'Failed to create album'});
+        return res.status(400).json({error: 'Failed to create album'});
     }
 });
 
 router.put('/:id', async (req, res) => {
     try {
         const {id} = req.params;
-        const album = await MusicAlbum.findByIdAndUpdate(id, req.body, { new: true});
+        const album = await MusicAlbum.findByIdAndUpdate(id, req.body, { new: true, runValidators: true});
         res.status(200).json(album);
 
         // const {id} = req.params;
@@ -113,9 +141,12 @@ router.delete('/:id', async (req, res) => {
     try {
         const {id} = req.params;
         const album = await MusicAlbum.findByIdAndDelete(id);
-        res.status(201).json(album);
+        if (!album) {
+            return res.status(404).json({ error: "album not found" })
+        }
+        res.status(204).json(album);
     } catch (err) {
-        res.status(400).json({error: 'Failed to delete album'});
+        res.status(500).json({error: 'Failed to delete album'});
     }
 });
 
