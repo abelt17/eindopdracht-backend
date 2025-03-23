@@ -5,6 +5,10 @@ import {faker} from "@faker-js/faker";
 const router = express.Router();
 
 router.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
     const acceptHeader = req.headers['accept'] || '';
     console.log(`Client accepteert: ${acceptHeader}`);
     if (acceptHeader.includes('application/json')) {
@@ -15,12 +19,16 @@ router.use((req, res, next) => {
 })
 
 router.options('/', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Allow', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', ['GET', 'POST', 'OPTIONS'])
     res.status(204).send();
 });
 
 router.options('/:id', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Allow', 'GET, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS');
     res.status(204).send()
 });
 
@@ -52,10 +60,10 @@ router.get('/', async (req, res) => {
                 totalPages: Math.ceil(totalAlbums / limit),
                 totalItems: totalAlbums,
                 _links: {
-                    first: { page: 1, href: `${process.env.BASE_URL}/signs?page=1&limit=${limit}` },
-                    last: { page: Math.ceil(totalAlbums / limit), href: `${process.env.BASE_URL}/signs?page=${Math.ceil(totalAlbums / limit)}&limit=${limit}` },
-                    previous: page > 1 ? { page: page - 1, href: `${process.env.BASE_URL}/signs?page=${page - 1}&limit=${limit}` } : null,
-                    next: (page * limit < totalAlbums) ? { page: page + 1, href: `${process.env.BASE_URL}/signs?page=${page + 1}&limit=${limit}` } : null
+                    first: { page: 1, href: `${process.env.BASE_URL}/musicAlbums?page=1&limit=${limit}` },
+                    last: { page: Math.ceil(totalAlbums / limit), href: `${process.env.BASE_URL}/musicAlbums?page=${Math.ceil(totalAlbums / limit)}&limit=${limit}` },
+                    previous: page > 1 ? { page: page - 1, href: `${process.env.BASE_URL}/musicAlbums?page=${page - 1}&limit=${limit}` } : null,
+                    next: (page * limit < totalAlbums) ? { page: page + 1, href: `${process.env.BASE_URL}/musicAlbums?page=${page + 1}&limit=${limit}` } : null
                 }
             }
 
